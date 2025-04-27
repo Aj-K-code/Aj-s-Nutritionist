@@ -22,38 +22,29 @@ let tokenClient;
  * Initialize the Google API client
  */
 function initClient() {
-    // Initialize the tokenClient with proper configuration
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        prompt: 'consent',
-        callback: (tokenResponse) => {
-            if (tokenResponse && !tokenResponse.error) {
-                isAuthorized = true;
-                updateUIAfterAuth();
-                // Load the API clients after successful authentication
-                loadSheetsAPI();
-                loadDriveAPI();
-            } else {
-                isAuthorized = false;
-                console.error('Error authenticating:', tokenResponse ? tokenResponse.error : 'No response');
-                document.getElementById('auth-message').textContent = 'Authentication failed. Please try again.';
-            }
-        }
-    });
-
-    // Initialize the API client
+    console.log('Initializing Google API client...');
+    
+    // First, initialize the gapi client
     gapi.client.init({
         apiKey: API_KEY,
-        discoveryDocs: DISCOVERY_DOCS
+        discoveryDocs: DISCOVERY_DOCS,
     }).then(() => {
+        console.log('GAPI client initialized');
+        
+        // Now initialize the token client
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: handleTokenResponse
+        });
+        
+        console.log('Token client initialized');
+        
         // Check if user is already signed in
-        const token = gapi.client.getToken();
-        if (token) {
+        if (gapi.client.getToken() !== null) {
             isAuthorized = true;
             updateUIAfterAuth();
-            loadSheetsAPI();
-            loadDriveAPI();
+            loadAPIs();
         }
     }).catch(error => {
         console.error('Error initializing GAPI client:', error);
@@ -62,91 +53,55 @@ function initClient() {
 }
 
 /**
- * Exchange authorization code for tokens
- * This uses the client secret which should only be used server-side
- * For GitHub Pages, this would typically be handled by a separate backend
+ * Handle the token response from Google
  */
-function exchangeCodeForToken(code) {
-    // Note: In a production environment, this should be done server-side
-    // This is a simplified example for demonstration purposes
-    const tokenEndpoint = 'https://oauth2.googleapis.com/token';
-    const params = new URLSearchParams();
-    params.append('code', code);
-    params.append('client_id', CLIENT_ID);
-    params.append('client_secret', CLIENT_SECRET);
-    params.append('redirect_uri', window.location.origin + window.location.pathname);
-    params.append('grant_type', 'authorization_code');
+function handleTokenResponse(tokenResponse) {
+    console.log('Token response received:', tokenResponse);
+    
+    if (tokenResponse && !tokenResponse.error) {
+        isAuthorized = true;
+        updateUIAfterAuth();
+        loadAPIs();
+    } else {
+        isAuthorized = false;
+        console.error('Error authenticating:', tokenResponse ? tokenResponse.error : 'No response');
+        document.getElementById('auth-message').textContent = 'Authentication failed. Please try again.';
+    }
+}
 
-    return fetch(tokenEndpoint, {
-        method: 'POST',
-        body: params
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.access_token) {
-            gapi.client.setToken({
-                access_token: data.access_token
-            });
-            isAuthorized = true;
-            updateUIAfterAuth();
-            loadSheetsAPI();
-            loadDriveAPI();
-            return data;
-        } else {
-            throw new Error('Failed to exchange code for token');
-        }
+/**
+ * Load both APIs after authentication
+ */
+function loadAPIs() {
+    console.log('Loading APIs...');
+    Promise.all([
+        gapi.client.load('sheets', 'v4'),
+        gapi.client.load('drive', 'v3')
+    ]).then(() => {
+        console.log('APIs loaded successfully');
+    }).catch(error => {
+        console.error('Error loading APIs:', error);
     });
-}
-
-/**
- * Load the Google Sheets API
- */
-function loadSheetsAPI() {
-    return gapi.client.load('sheets', 'v4');
-}
-
-/**
- * Load the Google Drive API
- */
-function loadDriveAPI() {
-    return gapi.client.load('drive', 'v3');
 }
 
 /**
  * Handle the auth button click
  */
 function handleAuthClick() {
-    if (!isAuthorized) {
-        // Request access token with proper configuration
-        tokenClient.requestAccessToken({
-            prompt: 'consent',
-            hint: '',
-            state: 'food-tracker-auth'
-        });
-    }
-}
-
-/**
- * Check for authorization code in URL after redirect
- */
-function checkAuthCode() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
+    console.log('Auth button clicked');
     
-    if (code) {
-        // Remove the code from the URL to prevent issues on refresh
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, document.title, newUrl);
-        
-        // Show loading state
-        document.getElementById('auth-message').textContent = 'Completing authentication...';
-        
-        // Exchange the code for tokens
-        exchangeCodeForToken(code)
-            .catch(error => {
-                console.error('Error exchanging code for token:', error);
-                document.getElementById('auth-message').textContent = 'Authentication failed. Please try again.';
+    if (!isAuthorized) {
+        if (tokenClient) {
+            console.log('Requesting access token...');
+            tokenClient.requestAccessToken({
+                prompt: 'consent'
             });
+        } else {
+            console.error('Token client not initialized');
+            document.getElementById('auth-message').textContent = 'Authentication not ready. Please try again later.';
+        }
+    } else {
+        console.log('User is already authorized');
     }
 }
 
@@ -154,6 +109,7 @@ function checkAuthCode() {
  * Update UI after successful authentication
  */
 function updateUIAfterAuth() {
+    console.log('Updating UI after auth');
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('form-section').classList.remove('hidden');
     document.getElementById('form-section').classList.add('animate__fadeIn');
@@ -163,14 +119,26 @@ function updateUIAfterAuth() {
  * Initialize the auth process when the page loads
  */
 function initAuth() {
-    document.getElementById('authorize-button').addEventListener('click', handleAuthClick);
+    console.log('Initializing auth...');
     
-    // Check for auth code in URL (after redirect)
-    checkAuthCode();
+    // Add event listener to the authorize button
+    const authorizeButton = document.getElementById('authorize-button');
+    if (authorizeButton) {
+        authorizeButton.addEventListener('click', handleAuthClick);
+        console.log('Auth button event listener added');
+    } else {
+        console.error('Authorize button not found');
+    }
     
     // Load the auth2 library
-    gapi.load('client:auth2', initClient);
+    gapi.load('client', initClient);
 }
 
 // Initialize auth when the page loads
-window.addEventListener('load', initAuth);
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM content loaded, initializing auth...');
+    setTimeout(initAuth, 1000); // Slight delay to ensure Google APIs are loaded
+});
+
+// Export functions for use in other modules
+export { isAuthorized, SHEET_ID, FOLDER_ID };

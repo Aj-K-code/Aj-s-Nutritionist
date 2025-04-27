@@ -1,3 +1,6 @@
+// Import authentication state and credentials
+import { isAuthorized, SHEET_ID, FOLDER_ID } from './auth.js';
+
 // DOM Elements
 const foodForm = document.getElementById('food-form');
 const foodNameInput = document.getElementById('food-name');
@@ -28,6 +31,14 @@ function setDefaultDateTime() {
 
 // Initialize the form
 function initForm() {
+    console.log('Initializing form...');
+    
+    // Check if DOM elements exist before adding event listeners
+    if (!foodForm || !foodImageInput) {
+        console.error('Required DOM elements not found');
+        return;
+    }
+    
     setDefaultDateTime();
     
     // Image preview functionality
@@ -52,11 +63,13 @@ function initForm() {
     
     // Form submission
     foodForm.addEventListener('submit', handleFormSubmit);
+    console.log('Form initialized successfully');
 }
 
 // Handle form submission
 async function handleFormSubmit(event) {
     event.preventDefault();
+    console.log('Form submitted');
     
     if (!isAuthorized) {
         alert('Please sign in with Google first');
@@ -77,9 +90,11 @@ async function handleFormSubmit(event) {
             throw new Error('Please select an image');
         }
         
+        console.log('Uploading image to Google Drive...');
         // Upload image to Google Drive
         const imageUrl = await uploadImageToDrive(imageFile);
         
+        console.log('Adding data to Google Sheet...');
         // Add data to Google Sheet
         await addDataToSheet(foodName, foodDescription, mealTime, imageUrl);
         
@@ -208,5 +223,8 @@ function resetForm() {
     setDefaultDateTime();
 }
 
-// Initialize when the page loads
-window.addEventListener('load', initForm);
+// Initialize when the page is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM content loaded, initializing app...');
+    setTimeout(initForm, 1500); // Slight delay to ensure auth is initialized first
+});
