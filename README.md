@@ -16,25 +16,48 @@ A modern, polished web application that allows authenticated users to track thei
 ### 1. Create a Google Cloud Project
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project
-3. Enable the following APIs:
+2. Click on "Select a project" at the top of the page, then click "New Project"
+3. Enter a project name and click "Create"
+4. Once created, select your new project from the project selector
+
+### 2. Enable Required APIs
+
+1. In your Google Cloud project, go to "APIs & Services" > "Library"
+2. Search for and enable the following APIs:
    - Google Sheets API
    - Google Drive API
 
-### 2. Create OAuth Credentials
+### 3. Create OAuth Credentials
 
 1. In your Google Cloud project, go to "APIs & Services" > "Credentials"
 2. Click "Create Credentials" > "OAuth client ID"
-3. Set the application type to "Web application"
-4. Add authorized JavaScript origins:
+3. If prompted to configure the consent screen, click "Configure Consent Screen"
+   - Select "External" user type (unless you have a Google Workspace)
+   - Fill in the required information (App name, User support email, Developer contact information)
+   - Add the necessary scopes:
+     - `https://www.googleapis.com/auth/spreadsheets`
+     - `https://www.googleapis.com/auth/drive.file`
+   - Add test users (your email and any other users who need access)
+   - Complete the consent screen setup
+4. Return to "Credentials" and click "Create Credentials" > "OAuth client ID"
+5. Set the application type to "Web application"
+6. Add authorized JavaScript origins:
    - For local testing: `http://localhost:8080`
    - For GitHub Pages: `https://yourusername.github.io`
-5. Add authorized redirect URIs:
+7. Add authorized redirect URIs:
    - For local testing: `http://localhost:8080`
    - For GitHub Pages: `https://yourusername.github.io/food-tracker`
-6. Create the credentials and note the Client ID and API Key
+8. Click "Create"
+9. You will see a popup with your **Client ID** and **Client Secret**. Save these values.
 
-### 3. Create a Google Sheet
+### 4. Create API Key
+
+1. In your Google Cloud project, go to "APIs & Services" > "Credentials"
+2. Click "Create Credentials" > "API Key"
+3. Your **API Key** will be displayed. Save this value.
+4. (Optional but recommended) Click "Restrict Key" to limit which APIs can use this key
+
+### 5. Create a Google Sheet
 
 1. Go to [Google Sheets](https://sheets.google.com/) and create a new spreadsheet
 2. Rename the first sheet to "Sheet1"
@@ -44,38 +67,28 @@ A modern, polished web application that allows authenticated users to track thei
    - Description
    - Meal Time
    - Image URL
-4. Note the Sheet ID (from the URL: `https://docs.google.com/spreadsheets/d/SHEET_ID/edit`)
+4. Note the **Sheet ID** from the URL: `https://docs.google.com/spreadsheets/d/SHEET_ID/edit`
 
-### 4. Create a Google Drive Folder
+### 6. Create a Google Drive Folder
 
 1. Go to [Google Drive](https://drive.google.com/) and create a new folder for food images
-2. Note the Folder ID (from the URL: `https://drive.google.com/drive/folders/FOLDER_ID`)
+2. Right-click on the folder and select "Get link"
+3. The link will look like: `https://drive.google.com/drive/folders/FOLDER_ID`
+4. Extract the **Folder ID** from this URL
 
-### 5. Set Up GitHub Repository and Secrets
+### 7. Set Up GitHub Repository and Secrets
 
 1. Create a new GitHub repository
 2. Push the code to the repository
 3. Go to repository settings > Secrets and variables > Actions
 4. Add the following repository secrets:
-   - `GOOGLE_CLIENT_ID`: Your OAuth client ID
-   - `GOOGLE_API_KEY`: Your API key
-   - `GOOGLE_SHEET_ID`: Your Google Sheet ID
-   - `GOOGLE_FOLDER_ID`: Your Google Drive folder ID
+   - `GOOGLE_CLIENT_ID`: Your OAuth client ID (from step 3)
+   - `GOOGLE_CLIENT_SECRET`: Your OAuth client secret (from step 3)
+   - `GOOGLE_API_KEY`: Your API key (from step 4)
+   - `GOOGLE_SHEET_ID`: Your Google Sheet ID (from step 5)
+   - `GOOGLE_FOLDER_ID`: Your Google Drive folder ID (from step 6)
 
-### 6. Configure Google OAuth Consent Screen
-
-1. In your Google Cloud project, go to "APIs & Services" > "OAuth consent screen"
-2. Fill in the required information:
-   - App name
-   - User support email
-   - Developer contact information
-3. Add the necessary scopes:
-   - `https://www.googleapis.com/auth/spreadsheets`
-   - `https://www.googleapis.com/auth/drive.file`
-4. Add test users (your email and any other users who need access)
-5. Submit for verification if you plan to make the app available to all users
-
-### 7. Deploy to GitHub Pages
+### 8. Deploy to GitHub Pages
 
 The repository includes a GitHub Actions workflow that will automatically build and deploy the site to GitHub Pages when you push to the main branch.
 
@@ -92,6 +105,7 @@ To test the application locally:
 1. Create a `.env` file in the project root with the following variables:
    ```
    GOOGLE_CLIENT_ID=your_client_id
+   GOOGLE_CLIENT_SECRET=your_client_secret
    GOOGLE_API_KEY=your_api_key
    GOOGLE_SHEET_ID=your_sheet_id
    GOOGLE_FOLDER_ID=your_folder_id

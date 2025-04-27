@@ -50,6 +50,7 @@ module.exports = (env, argv) => {
       // For GitHub Actions build
       new webpack.DefinePlugin({
         'process.env.GOOGLE_CLIENT_ID': JSON.stringify(process.env.GOOGLE_CLIENT_ID),
+        'process.env.GOOGLE_CLIENT_SECRET': JSON.stringify(process.env.GOOGLE_CLIENT_SECRET),
         'process.env.GOOGLE_API_KEY': JSON.stringify(process.env.GOOGLE_API_KEY),
         'process.env.GOOGLE_SHEET_ID': JSON.stringify(process.env.GOOGLE_SHEET_ID),
         'process.env.GOOGLE_FOLDER_ID': JSON.stringify(process.env.GOOGLE_FOLDER_ID)
